@@ -3,31 +3,28 @@ package com.example.passwordmanagersql;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.DiffUtil;
-import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
+import java.util.ArrayList;
 import java.util.List;
 
-public class PasswordAdapter extends ListAdapter<PasswordEntry, PasswordAdapter.PasswordHolder> {
+public class PasswordAdapter extends RecyclerView.Adapter<PasswordAdapter.PasswordHolder> {
+    List<PasswordEntry> passwords = new ArrayList<>();
     private OnItemClickListener listener;
 
-    public PasswordAdapter() {
-        super(DIFF_CALLBACK);
+    public interface OnLongItemClickListener {
+        void onLongItemClick(int position);
     }
 
-    private static final DiffUtil.ItemCallback<PasswordEntry> DIFF_CALLBACK = new DiffUtil.ItemCallback<PasswordEntry>() {
-        @Override
-        public boolean areItemsTheSame(@NonNull PasswordEntry oldItem, @NonNull PasswordEntry newItem) {
-            return oldItem.id == newItem.id;
-        }
+    private OnLongItemClickListener longClickListener;
 
-        @Override
-        public boolean areContentsTheSame(@NonNull PasswordEntry oldItem, @NonNull PasswordEntry newItem) {
-            return oldItem.website.equals(newItem.website) && oldItem.encryptedPassword.equals(newItem.encryptedPassword);
-        }
-    };
+
+    public void setOnLongItemClickListener(OnLongItemClickListener listener) {
+        this.longClickListener = listener;
+    }
+
 
     @NonNull
     @Override
@@ -39,31 +36,47 @@ public class PasswordAdapter extends ListAdapter<PasswordEntry, PasswordAdapter.
 
     @Override
     public void onBindViewHolder(@NonNull PasswordHolder holder, int position) {
-        PasswordEntry currentPassword = getItem(position);
-        holder.textViewWebsite.setText(currentPassword.website);
+        PasswordEntry currentPassword = passwords.get(position);
+        holder.textViewWebsite.setText(currentPassword.getWebsite());
+        holder.buttonShowPassword.setOnClickListener(v -> {
+            if (listener != null && position != RecyclerView.NO_POSITION) {
+                listener.onShowPasswordClick(currentPassword);
+            }
+        });
     }
 
-    public PasswordEntry getPasswordAt(int position) {
-        return getItem(position);
+    @Override
+    public int getItemCount() {
+        return passwords.size();
     }
+
+    public void submitList(List<PasswordEntry> passwords) {
+        this.passwords = passwords;
+        notifyDataSetChanged();
+    }
+
+
 
     class PasswordHolder extends RecyclerView.ViewHolder {
         private TextView textViewWebsite;
+        private Button buttonShowPassword;
 
         public PasswordHolder(View itemView) {
             super(itemView);
             textViewWebsite = itemView.findViewById(R.id.text_view_website);
-            itemView.setOnClickListener(v -> {
-                int position = getAdapterPosition();
-                if (listener != null && position != RecyclerView.NO_POSITION) {
-                    listener.onItemClick(getItem(position));
+            buttonShowPassword = itemView.findViewById(R.id.button_show_password);
+
+            itemView.setOnLongClickListener(v -> {
+                if (longClickListener != null && getAdapterPosition() != RecyclerView.NO_POSITION) {
+                    longClickListener.onLongItemClick(getAdapterPosition());
                 }
+                return true;
             });
         }
     }
 
     public interface OnItemClickListener {
-        void onItemClick(PasswordEntry passwordEntry);
+        void onShowPasswordClick(PasswordEntry passwordEntry);
     }
 
     public void setOnItemClickListener(OnItemClickListener listener) {

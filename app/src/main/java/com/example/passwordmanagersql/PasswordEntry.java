@@ -10,6 +10,18 @@ public class PasswordEntry {
     public String website;
     public String encryptedPassword;
 
+    public int getId() {
+        return id;
+    }
+
+    public String getWebsite() {
+        return website;
+    }
+
+    public String getEncryptedPassword() {
+        return encryptedPassword;
+    }
+
     public PasswordEntry(String website, String encryptedPassword) {
         this.website = website;
         this.encryptedPassword = encryptedPassword;
