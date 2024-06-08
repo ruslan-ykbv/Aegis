@@ -243,7 +243,7 @@ public class MainActivity extends AppCompatActivity {
                 passwordViewModel.insert(passwordEntry);
                 Toast.makeText(this, "Password saved", Toast.LENGTH_SHORT).show();
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.e("Add password exception: ", e.toString());
                 Toast.makeText(this, "Error saving password", Toast.LENGTH_SHORT).show();
             }
         } else if (requestCode == EDIT_PASSWORD_REQUEST && resultCode == RESULT_OK) {
