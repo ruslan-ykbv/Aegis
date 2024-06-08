@@ -3,5 +3,5 @@
 
     <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar"/>
 
-    <style name="Base.Theme.PasswordManagerSQL." parent="Base.Theme.PasswordManagerSQL" />
+    <style name="Base.Theme.PasswordManagerSQL." parent="Theme.AppCompat.DayNight.NoActionBar" />
 </resources>
