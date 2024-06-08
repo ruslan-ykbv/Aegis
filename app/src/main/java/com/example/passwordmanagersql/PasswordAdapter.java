@@ -26,6 +26,18 @@ public class PasswordAdapter extends RecyclerView.Adapter<PasswordAdapter.Passwo
     }
 
 
+    private OnEditItemClickListener editItemClickListener;
+
+    public interface OnEditItemClickListener {
+        void onEditItemClick(PasswordEntry passwordEntry);
+    }
+
+    public void setOnEditItemClickListener(OnEditItemClickListener listener) {
+        this.editItemClickListener = listener;
+    }
+
+
+
     @NonNull
     @Override
     public PasswordHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -38,9 +50,17 @@ public class PasswordAdapter extends RecyclerView.Adapter<PasswordAdapter.Passwo
     public void onBindViewHolder(@NonNull PasswordHolder holder, int position) {
         PasswordEntry currentPassword = passwords.get(position);
         holder.textViewWebsite.setText(currentPassword.getWebsite());
+        holder.textViewUsername.setText(currentPassword.getUsername());
         holder.buttonShowPassword.setOnClickListener(v -> {
             if (listener != null && position != RecyclerView.NO_POSITION) {
                 listener.onShowPasswordClick(currentPassword);
+            }
+        });
+
+
+        holder.buttonEditPassword.setOnClickListener(v -> {
+            if (editItemClickListener != null && position != RecyclerView.NO_POSITION) {
+                editItemClickListener.onEditItemClick(currentPassword);
             }
         });
     }
@@ -59,12 +79,17 @@ public class PasswordAdapter extends RecyclerView.Adapter<PasswordAdapter.Passwo
 
     class PasswordHolder extends RecyclerView.ViewHolder {
         private TextView textViewWebsite;
+        private TextView textViewUsername;
         private Button buttonShowPassword;
+
+        private Button buttonEditPassword;
 
         public PasswordHolder(View itemView) {
             super(itemView);
             textViewWebsite = itemView.findViewById(R.id.text_view_website);
+            textViewUsername = itemView.findViewById(R.id.text_view_username);
             buttonShowPassword = itemView.findViewById(R.id.button_show_password);
+            buttonEditPassword = itemView.findViewById(R.id.button_edit_password);
 
             itemView.setOnLongClickListener(v -> {
                 if (longClickListener != null && getAdapterPosition() != RecyclerView.NO_POSITION) {

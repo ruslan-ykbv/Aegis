@@ -56,6 +56,23 @@ public class MainActivity extends AppCompatActivity {
             authenticateUser(); // Trigger biometric authentication
         });
 
+        adapter.setOnEditItemClickListener(passwordEntry -> {
+            passwordEntryToShow = passwordEntry;
+            authenticateUserForEdit(); // Prompt for biometric authentication
+        });
+
+
+
+//        adapter.setOnEditItemClickListener(passwordEntry -> {
+//            // Handle "Edit" button click
+//            Intent intent = new Intent(MainActivity.this, AddEditPasswordActivity.class);
+//            intent.putExtra(AddEditPasswordActivity.EXTRA_ID, passwordEntry.getId());
+//            intent.putExtra(AddEditPasswordActivity.EXTRA_WEBSITE, passwordEntry.getWebsite());
+//            intent.putExtra(AddEditPasswordActivity.EXTRA_PASSWORD, passwordEntry.getEncryptedPassword());
+//            startActivityForResult(intent, EDIT_PASSWORD_REQUEST);
+//        });
+
+
         adapter.setOnLongItemClickListener(position -> {
             PasswordEntry passwordEntry = adapter.passwords.get(position);
             showDeleteConfirmationDialog(passwordEntry);
@@ -131,17 +148,49 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(this, "Password deleted", Toast.LENGTH_SHORT).show();
     }
 
+    private void authenticateUserForEdit() {
+        BiometricPrompt.PromptInfo promptInfo = new BiometricPrompt.PromptInfo.Builder()
+                .setTitle("Authenticate to edit password")
+                .setSubtitle("Use your biometric credential")
+                .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK | BiometricManager.Authenticators.DEVICE_CREDENTIAL) // Allows biometric and device credential authentication
+                .build();
+
+        BiometricPrompt biometricPrompt = new BiometricPrompt(this, executor,
+                new BiometricPrompt.AuthenticationCallback() {
+                    @Override
+                    public void onAuthenticationSucceeded(
+                            @NonNull BiometricPrompt.AuthenticationResult result) {
+                        // Authentication succeeded, open AddEditPasswordActivity
+                        Intent intent = new Intent(MainActivity.this, AddEditPasswordActivity.class);
+                        intent.putExtra(AddEditPasswordActivity.EXTRA_ID, passwordEntryToShow.getId());
+                        intent.putExtra(AddEditPasswordActivity.EXTRA_WEBSITE, passwordEntryToShow.getWebsite());
+                        intent.putExtra(AddEditPasswordActivity.EXTRA_USERNAME, passwordEntryToShow.getUsername());
+                        intent.putExtra(AddEditPasswordActivity.EXTRA_PASSWORD, passwordEntryToShow.getEncryptedPassword());
+                        startActivityForResult(intent, EDIT_PASSWORD_REQUEST);
+                    }
+
+                    @Override
+                    public void onAuthenticationFailed() {
+                        // Authentication failed
+                        Toast.makeText(MainActivity.this, "Authentication failed", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+        biometricPrompt.authenticate(promptInfo);
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == ADD_PASSWORD_REQUEST && resultCode == RESULT_OK) {
             String website = data.getStringExtra(AddEditPasswordActivity.EXTRA_WEBSITE);
+            String username = data.getStringExtra(AddEditPasswordActivity.EXTRA_USERNAME);
             String password = data.getStringExtra(AddEditPasswordActivity.EXTRA_PASSWORD);
 
             try {
                 String encryptedPassword = EncryptionUtil.encrypt(password);
-                PasswordEntry passwordEntry = new PasswordEntry(website, encryptedPassword);
+                PasswordEntry passwordEntry = new PasswordEntry(website, username, encryptedPassword);
                 passwordViewModel.insert(passwordEntry);
                 Toast.makeText(this, "Password saved", Toast.LENGTH_SHORT).show();
             } catch (Exception e) {
@@ -156,11 +205,12 @@ public class MainActivity extends AppCompatActivity {
             }
 
             String website = data.getStringExtra(AddEditPasswordActivity.EXTRA_WEBSITE);
+            String username = data.getStringExtra(AddEditPasswordActivity.EXTRA_USERNAME);
             String password = data.getStringExtra(AddEditPasswordActivity.EXTRA_PASSWORD);
 
             try {
                 String encryptedPassword = EncryptionUtil.encrypt(password);
-                PasswordEntry passwordEntry = new PasswordEntry(website, encryptedPassword);
+                PasswordEntry passwordEntry = new PasswordEntry(website, username, encryptedPassword);
                 passwordEntry.id = id;
                 passwordViewModel.update(passwordEntry);
                 Toast.makeText(this, "Password updated", Toast.LENGTH_SHORT).show();
