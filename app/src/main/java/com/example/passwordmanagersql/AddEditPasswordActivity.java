@@ -6,6 +6,8 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
+
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -35,7 +37,7 @@ public class AddEditPasswordActivity extends AppCompatActivity {
         editTextWebsite = findViewById(R.id.edit_text_website);
         editTextPassword = findViewById(R.id.edit_text_password);
         editTextUsername = findViewById(R.id.edit_text_username);
-        Button buttonSavePassword = findViewById(R.id.button_save_password);
+        ImageView buttonSavePassword = findViewById(R.id.button_save_password);
 
         Intent intent = getIntent();
         if (intent.hasExtra(EXTRA_ID)) {

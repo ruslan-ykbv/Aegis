@@ -4,6 +4,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -78,11 +79,11 @@ public class PasswordAdapter extends RecyclerView.Adapter<PasswordAdapter.Passwo
 
 
     class PasswordHolder extends RecyclerView.ViewHolder {
-        private TextView textViewWebsite;
-        private TextView textViewUsername;
-        private Button buttonShowPassword;
+        private final TextView textViewWebsite;
+        private final TextView textViewUsername;
+        private final ImageView buttonShowPassword;
 
-        private Button buttonEditPassword;
+        private final ImageView buttonEditPassword;
 
         public PasswordHolder(View itemView) {
             super(itemView);

@@ -1,7 +1,11 @@
 package com.example.passwordmanagersql;
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
+import android.widget.ImageView;
+import android.widget.SearchView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -17,6 +21,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 public class MainActivity extends AppCompatActivity {
@@ -28,6 +35,10 @@ public class MainActivity extends AppCompatActivity {
     private BiometricPrompt biometricPrompt;
     private BiometricPrompt.PromptInfo promptInfo;
 
+    private SearchView searchView;
+
+    PasswordAdapter adapter;
+
     private PasswordEntry passwordEntryToShow; // Store the password entry temporarily
 
     @Override
@@ -35,7 +46,25 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        FloatingActionButton buttonAddPassword = findViewById(R.id.button_add_password);
+
+        searchView = findViewById(R.id.search_view);
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                filterPasswordEntries(newText);
+                return true;
+            }
+        });
+
+
+
+
+        ImageView buttonAddPassword = findViewById(R.id.button_add_password);
         buttonAddPassword.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, AddEditPasswordActivity.class);
             startActivityForResult(intent, ADD_PASSWORD_REQUEST);
@@ -45,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setHasFixedSize(true);
 
-        PasswordAdapter adapter = new PasswordAdapter();
+        adapter = new PasswordAdapter();
         recyclerView.setAdapter(adapter);
 
         passwordViewModel = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(this.getApplication())).get(PasswordViewModel.class);
@@ -60,17 +89,6 @@ public class MainActivity extends AppCompatActivity {
             passwordEntryToShow = passwordEntry;
             authenticateUserForEdit(); // Prompt for biometric authentication
         });
-
-
-
-//        adapter.setOnEditItemClickListener(passwordEntry -> {
-//            // Handle "Edit" button click
-//            Intent intent = new Intent(MainActivity.this, AddEditPasswordActivity.class);
-//            intent.putExtra(AddEditPasswordActivity.EXTRA_ID, passwordEntry.getId());
-//            intent.putExtra(AddEditPasswordActivity.EXTRA_WEBSITE, passwordEntry.getWebsite());
-//            intent.putExtra(AddEditPasswordActivity.EXTRA_PASSWORD, passwordEntry.getEncryptedPassword());
-//            startActivityForResult(intent, EDIT_PASSWORD_REQUEST);
-//        });
 
 
         adapter.setOnLongItemClickListener(position -> {
@@ -119,10 +137,41 @@ public class MainActivity extends AppCompatActivity {
                 String decryptedPassword = EncryptionUtil.decrypt(passwordEntryToShow.getEncryptedPassword());
                 showPasswordDialog(decryptedPassword);
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.e("Search exception: ", e.toString());
                 Toast.makeText(MainActivity.this, "Error decrypting password", Toast.LENGTH_SHORT).show();
             }
         }
+    }
+
+    private class FilterPasswordEntriesTask extends AsyncTask<String, Void, List<PasswordEntry>> {
+        @Override
+        protected List<PasswordEntry> doInBackground(String... params) {
+            String query = params[0];
+            List<PasswordEntry> filteredList = new ArrayList<>();
+            List<PasswordEntry> allPasswordEntries = null;
+            try {
+                allPasswordEntries = passwordViewModel.getAllPasswordsSync();
+            } catch (ExecutionException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            for (PasswordEntry entry : allPasswordEntries) {
+                if (entry.getWebsite().toLowerCase().contains(query.toLowerCase())) {
+                    filteredList.add(entry);
+                }
+            }
+
+            return filteredList;
+        }
+
+        @Override
+        protected void onPostExecute(List<PasswordEntry> filteredList) {
+            adapter.submitList(filteredList);
+        }
+    }
+
+    private void filterPasswordEntries(String query) {
+        new FilterPasswordEntriesTask().execute(query);
     }
 
     private void showPasswordDialog(String password) {

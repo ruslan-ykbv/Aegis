@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 public class PasswordViewModel extends AndroidViewModel {
     private PasswordRepository repository;
@@ -15,6 +16,10 @@ public class PasswordViewModel extends AndroidViewModel {
         super(application);
         repository = new PasswordRepository(application);
         allPasswords = repository.getAllPasswords();
+    }
+
+    public List<PasswordEntry> getAllPasswordsSync() throws ExecutionException, InterruptedException {
+        return repository.getAllPasswordsSync();
     }
 
     public LiveData<List<PasswordEntry>> getAllPasswords() {

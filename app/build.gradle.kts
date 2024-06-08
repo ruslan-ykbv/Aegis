@@ -1,11 +1,11 @@
 plugins {
     alias(libs.plugins.android.application)
 }
-configurations.all{
-    resolutionStrategy {
-        force("com.android.support:support-v4:28.0.0")
-    }
-}
+//configurations.all{
+//    resolutionStrategy {
+//        force("com.android.support:support-v4:28.0.0")
+//    }
+//}
 
 android {
     namespace = "com.example.passwordmanagersql"
@@ -13,7 +13,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.passwordmanagersql"
-        minSdk = 27
+        minSdk = 31
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"

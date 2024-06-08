@@ -3,6 +3,7 @@ package com.example.passwordmanagersql;
 import android.app.Application;
 import androidx.lifecycle.LiveData;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 public class PasswordRepository {
     private PasswordDao passwordDao;
@@ -14,8 +15,13 @@ public class PasswordRepository {
         allPasswords = passwordDao.getAllPasswords();
     }
 
+
     public LiveData<List<PasswordEntry>> getAllPasswords() {
         return allPasswords;
+    }
+
+    public List<PasswordEntry> getAllPasswordsSync() throws ExecutionException, InterruptedException {
+        return PasswordDatabase.databaseWriteExecutor.submit(() -> passwordDao.getAllPasswordsSync()).get();
     }
 
     public void insert(PasswordEntry passwordEntry) {
