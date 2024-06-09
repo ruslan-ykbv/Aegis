@@ -19,8 +19,6 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -29,16 +27,14 @@ import java.util.concurrent.Executor;
 public class MainActivity extends AppCompatActivity {
     public static final int ADD_PASSWORD_REQUEST = 1;
     public static final int EDIT_PASSWORD_REQUEST = 2;
-
+    PasswordAdapter adapter;
     private PasswordViewModel passwordViewModel;
     private Executor executor;
     private BiometricPrompt biometricPrompt;
-    private BiometricPrompt.PromptInfo promptInfo;
 
+    private BiometricPrompt.PromptInfo showPromptInfo;
+    private BiometricPrompt.PromptInfo editPromptInfo;
     private SearchView searchView;
-
-    PasswordAdapter adapter;
-
     private PasswordEntry passwordEntryToShow; // Store the password entry temporarily
 
     @Override
@@ -46,30 +42,43 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
+        // Initialize searchView for searching password entries
         searchView = findViewById(R.id.search_view);
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                return false;
+                return false; // We handle the query as it is typed
             }
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                filterPasswordEntries(newText);
+                filterPasswordEntries(newText); // Filter password entries as text changes
                 return true;
             }
         });
 
+        // Initialize showPromptInfo for biometric authentication when showing passwords
+        showPromptInfo = new BiometricPrompt.PromptInfo.Builder()
+                .setTitle("Biometric authentication")
+                .setSubtitle("Log in using your biometric credential or device credential")
+                .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK | BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+                .build();
 
+        // Initialize editPromptInfo for biometric authentication when editing passwords
+        editPromptInfo = new BiometricPrompt.PromptInfo.Builder()
+                .setTitle("Authenticate to edit password")
+                .setSubtitle("Use your biometric credential")
+                .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK | BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+                .build();
 
-
+        // Set up the add password button
         ImageView buttonAddPassword = findViewById(R.id.button_add_password);
         buttonAddPassword.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, AddEditPasswordActivity.class);
             startActivityForResult(intent, ADD_PASSWORD_REQUEST);
         });
 
+        // Set up the RecyclerView for displaying password entries
         RecyclerView recyclerView = findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setHasFixedSize(true);
@@ -77,103 +86,62 @@ public class MainActivity extends AppCompatActivity {
         adapter = new PasswordAdapter();
         recyclerView.setAdapter(adapter);
 
+        // Set up the ViewModel to manage password data
         passwordViewModel = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(this.getApplication())).get(PasswordViewModel.class);
         passwordViewModel.getAllPasswords().observe(this, adapter::submitList);
 
+        // Set up item click listener for showing password
         adapter.setOnItemClickListener(passwordEntry -> {
             passwordEntryToShow = passwordEntry;
-            authenticateUser(); // Trigger biometric authentication
+            authenticateUserForShow(); // Trigger biometric authentication for showing password
         });
 
+        // Set up item edit click listener for editing password
         adapter.setOnEditItemClickListener(passwordEntry -> {
             passwordEntryToShow = passwordEntry;
-            authenticateUserForEdit(); // Prompt for biometric authentication
+            authenticateUserForEdit(); // Trigger biometric authentication for editing password
         });
 
-
+        // Set up long item click listener for deleting password
         adapter.setOnLongItemClickListener(position -> {
             PasswordEntry passwordEntry = adapter.passwords.get(position);
             showDeleteConfirmationDialog(passwordEntry);
         });
 
-
-
+        // Initialize executor for biometric prompt
         executor = ContextCompat.getMainExecutor(this);
-        biometricPrompt = new BiometricPrompt(MainActivity.this, executor, new BiometricPrompt.AuthenticationCallback() {
-            @Override
-            public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
-                super.onAuthenticationError(errorCode, errString);
-                Toast.makeText(getApplicationContext(), "Authentication error: " + errString, Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
-                super.onAuthenticationSucceeded(result);
-                showPassword(); // Show the password after successful authentication
-            }
-
-            @Override
-            public void onAuthenticationFailed() {
-                super.onAuthenticationFailed();
-                Toast.makeText(getApplicationContext(), "Authentication failed", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        promptInfo = new BiometricPrompt.PromptInfo.Builder()
-                .setTitle("Biometric authentication")
-                .setSubtitle("Log in using your biometric credential or device credential")
-                .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK | BiometricManager.Authenticators.DEVICE_CREDENTIAL) // Allows biometric and device credential authentication
-                .build();
-
     }
 
-    private void authenticateUser() {
-        biometricPrompt.authenticate(promptInfo);
-    }
-
+    /**
+     * Show the password after successful biometric authentication.
+     */
     private void showPassword() {
         if (passwordEntryToShow != null) {
             try {
                 String decryptedPassword = EncryptionUtil.decrypt(passwordEntryToShow.getEncryptedPassword());
                 showPasswordDialog(decryptedPassword);
+                passwordEntryToShow = null; // Reset after action
             } catch (Exception e) {
                 Log.e("Search exception: ", e.toString());
                 Toast.makeText(MainActivity.this, "Error decrypting password", Toast.LENGTH_SHORT).show();
             }
+        } else {
+            Toast.makeText(MainActivity.this, "No password entry selected", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private class FilterPasswordEntriesTask extends AsyncTask<String, Void, List<PasswordEntry>> {
-        @Override
-        protected List<PasswordEntry> doInBackground(String... params) {
-            String query = params[0];
-            List<PasswordEntry> filteredList = new ArrayList<>();
-            List<PasswordEntry> allPasswordEntries = null;
-            try {
-                allPasswordEntries = passwordViewModel.getAllPasswordsSync();
-            } catch (ExecutionException | InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-
-            for (PasswordEntry entry : allPasswordEntries) {
-                if (entry.getWebsite().toLowerCase().contains(query.toLowerCase())) {
-                    filteredList.add(entry);
-                }
-            }
-
-            return filteredList;
-        }
-
-        @Override
-        protected void onPostExecute(List<PasswordEntry> filteredList) {
-            adapter.submitList(filteredList);
-        }
-    }
-
+    /**
+     * Filter password entries based on the search query.
+     * @param query The search query string.
+     */
     private void filterPasswordEntries(String query) {
         new FilterPasswordEntriesTask().execute(query);
     }
 
+    /**
+     * Show a dialog displaying the decrypted password.
+     * @param password The decrypted password to display.
+     */
     private void showPasswordDialog(String password) {
         new AlertDialog.Builder(this)
                 .setTitle("Password")
@@ -182,7 +150,10 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
-
+    /**
+     * Show a confirmation dialog to delete a password entry.
+     * @param passwordEntry The password entry to delete.
+     */
     private void showDeleteConfirmationDialog(PasswordEntry passwordEntry) {
         new AlertDialog.Builder(this)
                 .setTitle("Delete Password")
@@ -192,41 +163,73 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
+    /**
+     * Delete the specified password entry.
+     * @param passwordEntry The password entry to delete.
+     */
     private void deletePassword(PasswordEntry passwordEntry) {
         passwordViewModel.delete(passwordEntry);
         Toast.makeText(this, "Password deleted", Toast.LENGTH_SHORT).show();
     }
 
-    private void authenticateUserForEdit() {
-        BiometricPrompt.PromptInfo promptInfo = new BiometricPrompt.PromptInfo.Builder()
-                .setTitle("Authenticate to edit password")
-                .setSubtitle("Use your biometric credential")
-                .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK | BiometricManager.Authenticators.DEVICE_CREDENTIAL) // Allows biometric and device credential authentication
-                .build();
-
-        BiometricPrompt biometricPrompt = new BiometricPrompt(this, executor,
-                new BiometricPrompt.AuthenticationCallback() {
-                    @Override
-                    public void onAuthenticationSucceeded(
-                            @NonNull BiometricPrompt.AuthenticationResult result) {
-                        // Authentication succeeded, open AddEditPasswordActivity
-                        Intent intent = new Intent(MainActivity.this, AddEditPasswordActivity.class);
-                        intent.putExtra(AddEditPasswordActivity.EXTRA_ID, passwordEntryToShow.getId());
-                        intent.putExtra(AddEditPasswordActivity.EXTRA_WEBSITE, passwordEntryToShow.getWebsite());
-                        intent.putExtra(AddEditPasswordActivity.EXTRA_USERNAME, passwordEntryToShow.getUsername());
-                        intent.putExtra(AddEditPasswordActivity.EXTRA_PASSWORD, passwordEntryToShow.getEncryptedPassword());
-                        startActivityForResult(intent, EDIT_PASSWORD_REQUEST);
-                    }
-
-                    @Override
-                    public void onAuthenticationFailed() {
-                        // Authentication failed
-                        Toast.makeText(MainActivity.this, "Authentication failed", Toast.LENGTH_SHORT).show();
-                    }
-                });
-
-        biometricPrompt.authenticate(promptInfo);
+    /**
+     * Trigger biometric authentication for showing password.
+     */
+    private void authenticateUserForShow() {
+        biometricPrompt = new BiometricPrompt(MainActivity.this, executor, showAuthenticationCallback);
+        biometricPrompt.authenticate(showPromptInfo);
     }
+
+    /**
+     * Trigger biometric authentication for editing password.
+     */
+    private void authenticateUserForEdit() {
+        biometricPrompt = new BiometricPrompt(MainActivity.this, executor, editAuthenticationCallback);
+        biometricPrompt.authenticate(editPromptInfo);
+    }
+
+    // Authentication callback for showing password
+    private final BiometricPrompt.AuthenticationCallback showAuthenticationCallback = new BiometricPrompt.AuthenticationCallback() {
+        @Override
+        public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
+            super.onAuthenticationError(errorCode, errString);
+            Toast.makeText(getApplicationContext(), "Authentication error: " + errString, Toast.LENGTH_SHORT).show();
+        }
+
+        @Override
+        public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
+            super.onAuthenticationSucceeded(result);
+            showPassword(); // Show the password after successful authentication
+        }
+
+        @Override
+        public void onAuthenticationFailed() {
+            super.onAuthenticationFailed();
+            Toast.makeText(getApplicationContext(), "Authentication failed", Toast.LENGTH_SHORT).show();
+        }
+    };
+
+    // Authentication callback for editing password
+    private final BiometricPrompt.AuthenticationCallback editAuthenticationCallback = new BiometricPrompt.AuthenticationCallback() {
+        @Override
+        public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
+            super.onAuthenticationSucceeded(result);
+            // Authentication succeeded, open AddEditPasswordActivity
+            Intent intent = new Intent(MainActivity.this, AddEditPasswordActivity.class);
+            intent.putExtra(AddEditPasswordActivity.EXTRA_ID, passwordEntryToShow.getId());
+            intent.putExtra(AddEditPasswordActivity.EXTRA_WEBSITE, passwordEntryToShow.getWebsite());
+            intent.putExtra(AddEditPasswordActivity.EXTRA_USERNAME, passwordEntryToShow.getUsername());
+            intent.putExtra(AddEditPasswordActivity.EXTRA_PASSWORD, passwordEntryToShow.getEncryptedPassword());
+            startActivityForResult(intent, EDIT_PASSWORD_REQUEST);
+            passwordEntryToShow = null; // Reset after action
+        }
+
+        @Override
+        public void onAuthenticationFailed() {
+            super.onAuthenticationFailed();
+            Toast.makeText(getApplicationContext(), "Authentication failed", Toast.LENGTH_SHORT).show();
+        }
+    };
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -269,6 +272,36 @@ public class MainActivity extends AppCompatActivity {
             }
         } else {
             Toast.makeText(this, "Password not saved", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * AsyncTask for filtering password entries in the background.
+     */
+    private class FilterPasswordEntriesTask extends AsyncTask<String, Void, List<PasswordEntry>> {
+        @Override
+        protected List<PasswordEntry> doInBackground(String... params) {
+            String query = params[0];
+            List<PasswordEntry> filteredList = new ArrayList<>();
+            List<PasswordEntry> allPasswordEntries;
+            try {
+                allPasswordEntries = passwordViewModel.getAllPasswordsSync();
+            } catch (ExecutionException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            for (PasswordEntry entry : allPasswordEntries) {
+                if (entry.getWebsite().toLowerCase().contains(query.toLowerCase())) {
+                    filteredList.add(entry);
+                }
+            }
+
+            return filteredList;
+        }
+
+        @Override
+        protected void onPostExecute(List<PasswordEntry> filteredList) {
+            adapter.submitList(filteredList);
         }
     }
 }

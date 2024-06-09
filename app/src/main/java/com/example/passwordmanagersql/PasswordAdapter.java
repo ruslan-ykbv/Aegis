@@ -58,7 +58,6 @@ public class PasswordAdapter extends RecyclerView.Adapter<PasswordAdapter.Passwo
             }
         });
 
-
         holder.buttonEditPassword.setOnClickListener(v -> {
             if (editItemClickListener != null && position != RecyclerView.NO_POSITION) {
                 editItemClickListener.onEditItemClick(currentPassword);
