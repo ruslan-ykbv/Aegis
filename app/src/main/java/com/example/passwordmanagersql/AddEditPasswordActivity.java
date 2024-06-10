@@ -45,7 +45,7 @@ public class AddEditPasswordActivity extends AppCompatActivity {
             editTextWebsite.setText(intent.getStringExtra(EXTRA_WEBSITE));
             editTextUsername.setText(intent.getStringExtra(EXTRA_USERNAME)); // Set the username
             try {
-                String decryptedPassword = EncryptionUtil.decrypt(intent.getStringExtra(EXTRA_PASSWORD));
+                String decryptedPassword = EncryptionUtil.decrypt(this, intent.getStringExtra(EXTRA_PASSWORD));
                 editTextPassword.setText(decryptedPassword);
             } catch (Exception e) {
                 e.printStackTrace();

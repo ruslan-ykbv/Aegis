@@ -118,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
     private void showPassword() {
         if (passwordEntryToShow != null) {
             try {
-                String decryptedPassword = EncryptionUtil.decrypt(passwordEntryToShow.getEncryptedPassword());
+                String decryptedPassword = EncryptionUtil.decrypt(this, passwordEntryToShow.getEncryptedPassword());
                 showPasswordDialog(decryptedPassword);
                 passwordEntryToShow = null; // Reset after action
             } catch (Exception e) {
@@ -241,7 +241,7 @@ public class MainActivity extends AppCompatActivity {
             String password = data.getStringExtra(AddEditPasswordActivity.EXTRA_PASSWORD);
 
             try {
-                String encryptedPassword = EncryptionUtil.encrypt(password);
+                String encryptedPassword = EncryptionUtil.encrypt(this, password);
                 PasswordEntry passwordEntry = new PasswordEntry(website, username, encryptedPassword);
                 passwordViewModel.insert(passwordEntry);
                 Toast.makeText(this, "Password saved", Toast.LENGTH_SHORT).show();
@@ -261,7 +261,7 @@ public class MainActivity extends AppCompatActivity {
             String password = data.getStringExtra(AddEditPasswordActivity.EXTRA_PASSWORD);
 
             try {
-                String encryptedPassword = EncryptionUtil.encrypt(password);
+                String encryptedPassword = EncryptionUtil.encrypt(this, password);
                 PasswordEntry passwordEntry = new PasswordEntry(website, username, encryptedPassword);
                 passwordEntry.id = id;
                 passwordViewModel.update(passwordEntry);
