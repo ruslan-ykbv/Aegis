@@ -11,8 +11,10 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.text.InputType;
 import android.util.Log;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.SearchView;
 import android.widget.Toast;
@@ -27,6 +29,9 @@ import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -182,9 +187,22 @@ public class MainActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Enter Passphrase");
 
-        final EditText input = new EditText(this);
+        TextInputLayout textInputLayout = new TextInputLayout(this, null);
+        textInputLayout.setEndIconMode(TextInputLayout.END_ICON_PASSWORD_TOGGLE);
+
+        TextInputEditText input = new TextInputEditText(this);
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
-        builder.setView(input);
+        textInputLayout.addView(input);
+
+        // 4. Apply layout parameters to ensure the TextInputLayout is displayed correctly
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+        );
+        textInputLayout.setLayoutParams(params);
+
+        // 5. Set TextInputLayout as the view for the AlertDialog
+        builder.setView(textInputLayout);
 
         // Use a custom listener for the positive button
         builder.setPositiveButton("OK", null);
@@ -285,9 +303,22 @@ public class MainActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Enter Passphrase");
 
-        final EditText input = new EditText(this);
+        TextInputLayout textInputLayout = new TextInputLayout(this, null);
+        textInputLayout.setEndIconMode(TextInputLayout.END_ICON_PASSWORD_TOGGLE);
+
+        TextInputEditText input = new TextInputEditText(this);
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
-        builder.setView(input);
+        textInputLayout.addView(input);
+
+        // 4. Apply layout parameters to ensure the TextInputLayout is displayed correctly
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+        );
+        textInputLayout.setLayoutParams(params);
+
+        // 5. Set TextInputLayout as the view for the AlertDialog
+        builder.setView(textInputLayout);
 
         builder.setPositiveButton("OK", (dialog, which) -> {
             String passphrase = input.getText().toString();
