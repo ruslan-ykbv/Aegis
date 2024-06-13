@@ -186,9 +186,30 @@ public class MainActivity extends AppCompatActivity {
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         builder.setView(input);
 
-        builder.setPositiveButton("OK", (dialog, which) -> {
+        // Use a custom listener for the positive button
+        builder.setPositiveButton("OK", null);
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        // Override the positive button's listener to keep the dialog open if needed
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
             String passphrase = input.getText().toString();
             Log.d("Backup", "Passphrase entered: " + passphrase);
+
+            // Check passphrase strength
+            if (!isPassphraseStrong(passphrase)) {
+                // Show error message and keep the dialog open
+                input.setError("Passphrase is too weak. It should meet all of the following:\n" +
+                        "- At least 12 characters long\n" +
+                        "- Contains uppercase and lowercase letters\n" +
+                        "- Contains numbers\n" +
+                        "- Contains special characters");
+                return;
+            }
+
+            // Passphrase is strong, proceed with the backup
 
             // 3. Fetch all passwords from the database
             List<PasswordEntry> passwordEntries = new ArrayList<>();
@@ -240,10 +261,21 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(MainActivity.this, "Failed to create backup file", Toast.LENGTH_SHORT).show();
             }
-        });
 
-        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
-        builder.show();
+            // Close the dialog after processing the passphrase
+            dialog.dismiss();
+        });
+    }
+
+    // Helper method to check passphrase strength
+    private boolean isPassphraseStrong(String passphrase) {
+        int strengthPoints = 0;
+        if (passphrase.length() >= 12) strengthPoints++;
+        if (passphrase.matches(".*[A-Z].*")) strengthPoints++;
+        if (passphrase.matches(".*\\d.*")) strengthPoints++;
+        if (passphrase.matches(".*[^A-Za-z0-9].*")) strengthPoints++;
+
+        return strengthPoints == 4;
     }
 
 
