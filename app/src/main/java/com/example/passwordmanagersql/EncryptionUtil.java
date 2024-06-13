@@ -39,14 +39,6 @@ public class EncryptionUtil {
     private static final int PBKDF2_ITERATIONS = 65536; // Adjust as needed for security/performance
     private static final int PBKDF2_KEY_LENGTH = 256; // In bits
 
-    private static SecretKey generateKeyFromPassphrase(String passphrase) throws Exception {
-        SecretKeyFactory factory = SecretKeyFactory.getInstance(PBKDF2_ALGORITHM);
-        KeySpec spec = new PBEKeySpec(passphrase.toCharArray(), "salt".getBytes(), // Use a secure random salt in production
-                PBKDF2_ITERATIONS, PBKDF2_KEY_LENGTH);
-        SecretKey secretKey = new SecretKeySpec(factory.generateSecret(spec).getEncoded(), KeyProperties.KEY_ALGORITHM_AES);
-        return secretKey;
-    }
-
     private static SecretKey getSecretKey(Context context) throws Exception {
 //        deleteExistingKey();
 
