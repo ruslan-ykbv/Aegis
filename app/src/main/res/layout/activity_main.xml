@@ -11,30 +11,31 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:elevation="30dp"
-        android:padding="20dp"
-        android:src="@drawable/ic_show"
+        android:padding="10dp"
+        android:layout_margin="20dp"
+        android:src="@drawable/ic_backup"
         android:text="Back up"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.049"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.97" />
 
     <ImageView
         android:id="@+id/button_restore"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_margin="20dp"
         android:elevation="20dp"
         android:padding="10dp"
-        android:src="@drawable/ic_launcher_foreground"
+        android:src="@drawable/ic_restore"
         android:text="Restore"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/button_backup"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintHorizontal_bias="0.048"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.817" />
+        app:layout_constraintVertical_bias="1.0" />
 
     <ImageView
         android:id="@+id/button_add_password"
