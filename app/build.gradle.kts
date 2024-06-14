@@ -43,6 +43,7 @@ dependencies {
     implementation ("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation ("androidx.lifecycle:lifecycle-extensions:2.2.0")
     implementation ("androidx.room:room-runtime:2.6.1")
+
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.monitor)
     implementation(libs.ext.junit)

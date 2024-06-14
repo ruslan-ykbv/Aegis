@@ -29,30 +29,25 @@
 
     </androidx.cardview.widget.CardView>
 
-    <!-- RecyclerView with NestedScrollView -->
-    <androidx.core.widget.NestedScrollView
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginTop="24dp"
-        app:layout_constraintBottom_toTopOf="@id/controls"
+    <!-- RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:clipToPadding="false"
+        android:paddingTop="110dp"
+        android:paddingBottom="90dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cardView_search">
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler_view"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="10dp" />
-
-    </androidx.core.widget.NestedScrollView>
+        app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.cardview.widget.CardView
         android:id="@+id/controls"
         android:layout_width="match_parent"
         android:layout_height="110dp"
-        app:cardBackgroundColor="@color/grey"
+        android:background="@color/grey"
         app:cardCornerRadius="20dp"
         android:layout_marginBottom="-20dp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -62,9 +57,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@color/grey"
             android:orientation="horizontal">
-
-            <!-- Add controls here, such as buttons, etc. -->
 
             <ImageView
                 android:id="@+id/button_backup"
@@ -101,6 +95,5 @@
         </LinearLayout>
 
     </androidx.cardview.widget.CardView>
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

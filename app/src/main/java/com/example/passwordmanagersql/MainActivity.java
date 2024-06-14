@@ -19,6 +19,7 @@ import android.widget.ImageView;
 import android.widget.SearchView;
 import android.widget.Toast;
 
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -56,7 +57,6 @@ public class MainActivity extends AppCompatActivity {
 
     private BiometricPrompt.PromptInfo showPromptInfo;
     private BiometricPrompt.PromptInfo editPromptInfo;
-    private SearchView searchView;
     private PasswordEntry passwordEntryToShow; // Store the password entry temporarily
     // Authentication callback for showing password
     private final BiometricPrompt.AuthenticationCallback showAuthenticationCallback = new BiometricPrompt.AuthenticationCallback() {
@@ -105,6 +105,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
+
         ImageView buttonBackup = findViewById(R.id.button_backup);
         buttonBackup.setOnClickListener(v -> startBackupProcess());
 
@@ -112,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
         buttonRestore.setOnClickListener(v -> performRestore());
 
         // Initialize searchView for searching password entries
-        searchView = findViewById(R.id.search_view);
+        SearchView searchView = findViewById(R.id.search_view);
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
@@ -147,9 +149,11 @@ public class MainActivity extends AppCompatActivity {
         adapter = new PasswordAdapter();
         recyclerView.setAdapter(adapter);
 
+
         // Set up the ViewModel to manage password data
         passwordViewModel = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(this.getApplication())).get(PasswordViewModel.class);
         passwordViewModel.getAllPasswords().observe(this, adapter::submitList);
+
 
         // Set up item click listener for showing password
         adapter.setOnItemClickListener(passwordEntry -> {
