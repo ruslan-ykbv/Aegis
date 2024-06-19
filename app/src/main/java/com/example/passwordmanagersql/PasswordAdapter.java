@@ -1,5 +1,6 @@
 package com.example.passwordmanagersql;
 
+import android.annotation.SuppressLint;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -71,6 +72,7 @@ public class PasswordAdapter extends RecyclerView.Adapter<PasswordAdapter.Passwo
         return passwords.size();
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     public void submitList(List<PasswordEntry> passwords) {
         this.passwords = passwords;
         notifyDataSetChanged();
@@ -98,8 +100,8 @@ public class PasswordAdapter extends RecyclerView.Adapter<PasswordAdapter.Passwo
             buttonEditPassword = itemView.findViewById(R.id.button_edit_password);
 
             itemView.setOnLongClickListener(v -> {
-                if (longClickListener != null && getAdapterPosition() != RecyclerView.NO_POSITION) {
-                    longClickListener.onLongItemClick(getAdapterPosition());
+                if (longClickListener != null && getBindingAdapterPosition() != RecyclerView.NO_POSITION) {
+                    longClickListener.onLongItemClick(getBindingAdapterPosition());
                 }
                 return true;
             });

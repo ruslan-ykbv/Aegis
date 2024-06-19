@@ -3,15 +3,15 @@ package com.example.passwordmanagersql;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.textfield.TextInputEditText;
+
+import java.util.Objects;
 
 public class AddEditPasswordActivity extends AppCompatActivity {
     public static final String EXTRA_ID = "com.example.passwordmanager.EXTRA_ID";
@@ -45,10 +45,10 @@ public class AddEditPasswordActivity extends AppCompatActivity {
             editTextWebsite.setText(intent.getStringExtra(EXTRA_WEBSITE));
             editTextUsername.setText(intent.getStringExtra(EXTRA_USERNAME)); // Set the username
             try {
-                String decryptedPassword = EncryptionUtil.decrypt(this, intent.getStringExtra(EXTRA_PASSWORD));
+                String decryptedPassword = EncryptionUtil.decrypt(intent.getStringExtra(EXTRA_PASSWORD));
                 editTextPassword.setText(decryptedPassword);
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.e("Error occurred", e.toString());
             }
         } else {
             setTitle("Add Password");
@@ -58,9 +58,9 @@ public class AddEditPasswordActivity extends AppCompatActivity {
     }
 
     private void savePassword() {
-        String website = editTextWebsite.getText().toString().trim();
-        String username = editTextUsername.getText().toString().trim();
-        String password = editTextPassword.getText().toString().trim();
+        String website = Objects.requireNonNull(editTextWebsite.getText()).toString().trim();
+        String username = Objects.requireNonNull(editTextUsername.getText()).toString().trim();
+        String password = Objects.requireNonNull(editTextPassword.getText()).toString().trim();
 
         if (TextUtils.isEmpty(website) || TextUtils.isEmpty(password)) {
             setResult(RESULT_CANCELED);

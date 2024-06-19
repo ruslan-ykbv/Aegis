@@ -1,6 +1,5 @@
 package com.example.passwordmanagersql;
 
-import android.content.Context;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 import android.util.Base64;
@@ -9,7 +8,6 @@ import android.util.Log;
 import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
 import org.bouncycastle.crypto.params.Argon2Parameters;
 
-import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
@@ -31,24 +29,11 @@ public class EncryptionUtil {
     private static final int GCM_TAG_LENGTH = 128; // Tag length in bits
 
     // Argon2 parameters
-    private static int argon2Memory = 65536; // 64 MB
-    private static int argon2Iterations = 3;
-    private static int argon2Parallelism = 1;
+    private final static int argon2Memory = 65536; // 64 MB
+    private final static int argon2Iterations = 3;
+    private final static int argon2Parallelism = 1;
     private static final int ARGON2_SALT_LENGTH = 16;
     private static final int ARGON2_HASH_LENGTH = 32; // 256 bits
-
-    // Setter methods for Argon2 parameters
-    public static void setArgon2Memory(int memory) {
-        argon2Memory = memory;
-    }
-
-    public static void setArgon2Iterations(int iterations) {
-        argon2Iterations = iterations;
-    }
-
-    public static void setArgon2Parallelism(int parallelism) {
-        argon2Parallelism = parallelism;
-    }
 
     /**
      * Securely wipes the contents of a byte array.
@@ -67,7 +52,7 @@ public class EncryptionUtil {
         new SecureRandom().nextBytes(data);
     }
 
-    private static SecretKey getSecretKey(Context context) throws Exception {
+    private static SecretKey getSecretKey() throws Exception {
         KeyStore keyStore = KeyStore.getInstance(ANDROID_KEYSTORE);
         keyStore.load(null);
 
@@ -78,7 +63,7 @@ public class EncryptionUtil {
         return (SecretKey) keyStore.getKey(KEY_ALIAS, null);
     }
 
-    public static void generateNewKey(Context context) throws Exception {
+    public static void generateNewKey() throws Exception {
         KeyGenerator keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE);
         KeyGenParameterSpec keyGenParameterSpec = new KeyGenParameterSpec.Builder(
                 KEY_ALIAS,
@@ -225,16 +210,15 @@ public class EncryptionUtil {
 
     /**
      * Encrypts data using the Android KeyStore.
-     * @param context The Android context.
      * @param value The string to encrypt.
      * @return The encrypted data as a Base64 encoded string.
      * @throws Exception if encryption fails.
      */
-    public static String encrypt(Context context, String value) throws Exception {
+    public static String encrypt(String value) throws Exception {
         byte[] encrypted = null;
         byte[] iv = null;
         try {
-            SecretKey secretKey = getSecretKey(context);
+            SecretKey secretKey = getSecretKey();
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
             cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 
@@ -257,12 +241,11 @@ public class EncryptionUtil {
 
     /**
      * Decrypts data using the Android KeyStore.
-     * @param context The Android context.
      * @param encrypted The encrypted data as a Base64 encoded string.
      * @return The decrypted string.
      * @throws Exception if decryption fails.
      */
-    public static String decrypt(Context context, String encrypted) throws Exception {
+    public static String decrypt(String encrypted) throws Exception {
         byte[] combined = null;
         byte[] iv = null;
         byte[] encryptedData = null;
@@ -276,7 +259,7 @@ public class EncryptionUtil {
             System.arraycopy(combined, 0, iv, 0, iv.length);
             System.arraycopy(combined, iv.length, encryptedData, 0, encryptedData.length);
 
-            SecretKey secretKey = getSecretKey(context);
+            SecretKey secretKey = getSecretKey();
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
             GCMParameterSpec spec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
             cipher.init(Cipher.DECRYPT_MODE, secretKey, spec);

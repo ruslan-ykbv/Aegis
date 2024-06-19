@@ -47,13 +47,13 @@ public class KeyRotationManager {
     }
 
     public void rotateKeys(PasswordViewModel passwordViewModel) throws Exception {
-        EncryptionUtil.generateNewKey(context);
+        EncryptionUtil.generateNewKey();
         List<PasswordEntry> allPasswords = passwordViewModel.getAllPasswordsSync();
 
         for (PasswordEntry entry : allPasswords) {
-            String decryptedPassword = EncryptionUtil.decrypt(context, entry.getEncryptedPassword());
+            String decryptedPassword = EncryptionUtil.decrypt(entry.getEncryptedPassword());
 
-            entry.encryptedPassword = EncryptionUtil.encrypt(context, decryptedPassword);
+            entry.encryptedPassword = EncryptionUtil.encrypt(decryptedPassword);
             passwordViewModel.update(entry);
         }
 
