@@ -12,6 +12,22 @@ public class PasswordEntry {
     public String username; // New field for username
     public String encryptedPassword;
 
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setWebsite(String website) {
+        this.website = website;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public void setEncryptedPassword(String encryptedPassword) {
+        this.encryptedPassword = encryptedPassword;
+    }
+
     public int getId() {
         return id;
     }

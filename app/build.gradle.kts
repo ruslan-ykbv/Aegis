@@ -47,6 +47,9 @@ dependencies {
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.monitor)
     implementation(libs.ext.junit)
+    implementation(libs.androidx.work.runtime)
     annotationProcessor ("androidx.room:room-compiler:2.6.1")
     implementation ("androidx.recyclerview:recyclerview:1.3.2")
+
+    implementation ("org.bouncycastle:bcprov-jdk15on:1.70")
 }

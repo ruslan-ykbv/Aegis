@@ -3,7 +3,6 @@ package com.example.passwordmanagersql;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -12,32 +11,34 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PasswordAdapter extends RecyclerView.Adapter<PasswordAdapter.PasswordHolder> {
-    List<PasswordEntry> passwords = new ArrayList<>();
+    private List<PasswordEntry> passwords = new ArrayList<>();
     private OnItemClickListener listener;
+    private OnLongItemClickListener longClickListener;
+    private OnEditItemClickListener editItemClickListener;
 
     public interface OnLongItemClickListener {
         void onLongItemClick(int position);
     }
 
-    private OnLongItemClickListener longClickListener;
+    public interface OnEditItemClickListener {
+        void onEditItemClick(PasswordEntry passwordEntry);
+    }
 
+    public interface OnItemClickListener {
+        void onShowPasswordClick(PasswordEntry passwordEntry);
+    }
 
     public void setOnLongItemClickListener(OnLongItemClickListener listener) {
         this.longClickListener = listener;
-    }
-
-
-    private OnEditItemClickListener editItemClickListener;
-
-    public interface OnEditItemClickListener {
-        void onEditItemClick(PasswordEntry passwordEntry);
     }
 
     public void setOnEditItemClickListener(OnEditItemClickListener listener) {
         this.editItemClickListener = listener;
     }
 
-
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        this.listener = listener;
+    }
 
     @NonNull
     @Override
@@ -75,13 +76,18 @@ public class PasswordAdapter extends RecyclerView.Adapter<PasswordAdapter.Passwo
         notifyDataSetChanged();
     }
 
-
+    // Add this new method to get a PasswordEntry at a specific position
+    public PasswordEntry getPasswordAtPosition(int position) {
+        if (position >= 0 && position < passwords.size()) {
+            return passwords.get(position);
+        }
+        return null;
+    }
 
     class PasswordHolder extends RecyclerView.ViewHolder {
         private final TextView textViewWebsite;
         private final TextView textViewUsername;
         private final ImageView buttonShowPassword;
-
         private final ImageView buttonEditPassword;
 
         public PasswordHolder(View itemView) {
@@ -98,13 +104,5 @@ public class PasswordAdapter extends RecyclerView.Adapter<PasswordAdapter.Passwo
                 return true;
             });
         }
-    }
-
-    public interface OnItemClickListener {
-        void onShowPasswordClick(PasswordEntry passwordEntry);
-    }
-
-    public void setOnItemClickListener(OnItemClickListener listener) {
-        this.listener = listener;
     }
 }
