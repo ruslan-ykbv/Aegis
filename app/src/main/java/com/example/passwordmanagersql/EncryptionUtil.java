@@ -30,8 +30,8 @@ public class EncryptionUtil {
 
     // Argon2 parameters
     private final static int argon2Memory = 65536; // 64 MB
-    private final static int argon2Iterations = 3;
-    private final static int argon2Parallelism = 1;
+    private final static int argon2Iterations = 16;
+    private final static int argon2Parallelism = 16;
     private static final int ARGON2_SALT_LENGTH = 16;
     private static final int ARGON2_HASH_LENGTH = 32; // 256 bits
 

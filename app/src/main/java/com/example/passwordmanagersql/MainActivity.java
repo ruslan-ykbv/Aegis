@@ -9,8 +9,10 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.text.InputType;
 import android.util.Log;
+import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.SearchView;
 import android.widget.Toast;
 
@@ -46,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
     private BiometricPrompt.PromptInfo showPromptInfo;
     private BiometricPrompt.PromptInfo editPromptInfo;
     private PasswordEntry passwordEntryToShow;
+    private ProgressBar progressBar;
 
     private final ActivityResultLauncher<Intent> addPasswordLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -80,6 +83,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        progressBar = findViewById(R.id.progressBar);
 
         initializeComponents();
         setupRecyclerView();
@@ -163,6 +168,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void performRestore() {
+        progressBar.setVisibility(View.VISIBLE);
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("text/plain");
@@ -205,17 +211,22 @@ public class MainActivity extends AppCompatActivity {
             }
 
             performBackup(passphrase);
+
             dialog.dismiss();
+            progressBar.setVisibility(View.GONE);
+
         });
     }
 
     private void performBackup(String passphrase) {
+        progressBar.setVisibility(View.VISIBLE);
         List<PasswordEntry> passwordEntries;
         try {
             passwordEntries = passwordViewModel.getAllPasswordsSync();
         } catch (Exception e) {
-            Log.e("Error occurred", e.toString());
+            Log.e("Error occurred", "in backup");
             Toast.makeText(MainActivity.this, "Error fetching passwords", Toast.LENGTH_SHORT).show();
+            progressBar.setVisibility(View.GONE);
             return;
         }
 
@@ -227,8 +238,9 @@ public class MainActivity extends AppCompatActivity {
                 encryptedDataBuilder.append(encryptedData).append("\n");
             }
         } catch (Exception e) {
-            Log.e("Error occurred", e.toString());
+            Log.e("Error occurred", "in backup");
             Toast.makeText(MainActivity.this, "Backup failed", Toast.LENGTH_SHORT).show();
+            progressBar.setVisibility(View.GONE);
             return;
         }
         String encryptedData = encryptedDataBuilder.toString();
@@ -247,12 +259,13 @@ public class MainActivity extends AppCompatActivity {
                 outputStream.flush();
                 Toast.makeText(MainActivity.this, "Backup successful", Toast.LENGTH_SHORT).show();
             } catch (Exception e) {
-                Log.e("Error occurred", e.toString());
+                Log.e("Error occurred", "in backup");
                 Toast.makeText(MainActivity.this, "Backup failed", Toast.LENGTH_SHORT).show();
             }
         } else {
             Toast.makeText(MainActivity.this, "Failed to create backup file", Toast.LENGTH_SHORT).show();
         }
+        progressBar.setVisibility(View.GONE);
     }
 
     private boolean isPassphraseStrong(String passphrase) {
@@ -283,7 +296,9 @@ public class MainActivity extends AppCompatActivity {
 
         builder.setPositiveButton("OK", (dialog, which) -> {
             String passphrase = Objects.requireNonNull(input.getText()).toString();
+            progressBar.setVisibility(View.VISIBLE);
             restoreFromBackup(uri, passphrase);
+            progressBar.setVisibility(View.INVISIBLE);
         });
 
         builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
@@ -314,16 +329,16 @@ public class MainActivity extends AppCompatActivity {
                         PasswordEntry newEntry = new PasswordEntry(website, username, encryptedPassword);
                         passwordViewModel.insert(newEntry);
                     } else {
-                        Log.e("Restore", "Line " + lineNumber + " parsing error: Invalid format.");
+                        Log.e("Restore", "Parsing error: Invalid format.");
                     }
                 } catch (Exception e) {
-                    Log.e("Restore", "Line " + lineNumber + " decryption error: " + e.getMessage());
+                    Log.e("Error occurred", "in restore");
                 }
             }
 
             Toast.makeText(this, "Restore complete", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
-            Log.e("Restore", "Error reading or decrypting backup: " + e.getMessage());
+            Log.e("Error occurred", "in restore");
             Toast.makeText(this, "Error reading or decrypting backup", Toast.LENGTH_SHORT).show();
         }
     }
@@ -335,7 +350,7 @@ public class MainActivity extends AppCompatActivity {
                 showPasswordDialog(decryptedPassword);
                 passwordEntryToShow = null;
             } catch (Exception e) {
-                Log.e("Decrypt exception: ", e.toString());
+                Log.e("Error occurred", "in showing password");
                 Toast.makeText(MainActivity.this, "Error decrypting password", Toast.LENGTH_SHORT).show();
             }
         } else {
@@ -353,7 +368,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         } catch (Exception e) {
-            Log.e("Filter exception: ", e.toString());
+            Log.e("Error occurred", "in filtering passwords");
         }
         adapter.submitList(filteredList);
     }
@@ -446,7 +461,7 @@ public class MainActivity extends AppCompatActivity {
                 passwordViewModel.insert(passwordEntry);
                 Toast.makeText(this, "Password saved", Toast.LENGTH_SHORT).show();
             } catch (Exception e) {
-                Log.e("Add password exception: ", e.toString());
+                Log.e("Error occurred", "in adding password");
                 Toast.makeText(this, "Error saving password", Toast.LENGTH_SHORT).show();
             }
         }
@@ -471,7 +486,7 @@ public class MainActivity extends AppCompatActivity {
                 passwordViewModel.update(passwordEntry);
                 Toast.makeText(this, "Password updated", Toast.LENGTH_SHORT).show();
             } catch (Exception e) {
-                Log.e("Error occurred", e.toString());
+                Log.e("Error occurred", "in handling passwords");
                 Toast.makeText(this, "Error updating password", Toast.LENGTH_SHORT).show();
             }
         }
