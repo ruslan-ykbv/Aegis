@@ -20,6 +20,18 @@ public class PasswordEntry {
         return id;
     }
 
+    public void setWebsite(String website) {
+        this.website = website;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public void setEncryptedPassword(String encryptedPassword) {
+        this.encryptedPassword = encryptedPassword;
+    }
+
     public String getWebsite() {
         return website;
     }

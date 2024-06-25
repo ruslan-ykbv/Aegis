@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     android:background="@color/black">
 
+
     <androidx.cardview.widget.CardView
         android:id="@+id/cardView_search"
         android:layout_width="0dp"
