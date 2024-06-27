@@ -28,6 +28,7 @@ public class EncryptionUtil {
     private static final String KEY_ALIAS = "MyEncryptionKey";
     private static final int GCM_TAG_LENGTH = 128; // Tag length in bits
 
+
     // Argon2 parameters
     private final static int argon2Memory = 65536; // 64 MB
     private final static int argon2Iterations = 16;
@@ -46,7 +47,7 @@ public class EncryptionUtil {
         Arrays.fill(data, (byte) 0);
 
         // Overwrite with ones
-        Arrays.fill(data, (byte) 0xFF);
+        Arrays.fill(data, (byte) 0xFF); //1
 
         // Overwrite with random data
         new SecureRandom().nextBytes(data);

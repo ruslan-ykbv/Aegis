@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 public class KeyRotationManager {
     private static final String TAG = "KeyRotationManager";
-    public static final double ROTATION_INTERVAL = 0.01 * 24 * 60 * 60 * 1000L; // 30 days in milliseconds
+    public static final double ROTATION_INTERVAL = 14 * 24 * 60 * 60 * 1000L; // 14 days in milliseconds
     private static final String PREFS_NAME = "KeyRotationPrefs";
     private static final String LAST_ROTATION_TIME = "LastRotationTime";
     private final Context context;
@@ -86,7 +86,15 @@ public class KeyRotationManager {
             for (String decryptedPassword : decryptedPasswords) {
                 EncryptionUtil.secureDelete(decryptedPassword.getBytes());
             }
+
+            //Step 5: Securely clear all passwords from memory
+            for (PasswordEntry entry : allPasswords) {
+                EncryptionUtil.secureDelete(entry.getEncryptedPassword().getBytes());
+            }
+
             decryptedPasswords.clear();
+            allPasswords.clear();
+
 
             updateLastRotationTime();
             Log.i(TAG, "Key rotation completed successfully");
