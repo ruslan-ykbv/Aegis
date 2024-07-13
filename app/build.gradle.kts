@@ -1,11 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
 }
-//configurations.all{
-//    resolutionStrategy {
-//        force("com.android.support:support-v4:28.0.0")
-//    }
-//}
+
 
 android {
     namespace = "com.example.passwordmanagersql"
@@ -38,18 +34,18 @@ android {
 
 dependencies {
 
-    implementation ("androidx.appcompat:appcompat:1.7.0")
-    implementation ("com.google.android.material:material:1.12.0")
-    implementation ("androidx.constraintlayout:constraintlayout:2.1.4")
-    implementation ("androidx.lifecycle:lifecycle-extensions:2.2.0")
-    implementation ("androidx.room:room-runtime:2.6.1")
+    implementation (libs.appcompat)
+    implementation (libs.material)
+    implementation (libs.constraintlayout)
+    implementation (libs.lifecycle.extensions)
+    implementation (libs.room.runtime)
 
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.monitor)
     implementation(libs.ext.junit)
     implementation(libs.androidx.work.runtime)
-    annotationProcessor ("androidx.room:room-compiler:2.6.1")
-    implementation ("androidx.recyclerview:recyclerview:1.3.2")
+    annotationProcessor (libs.androidx.room.compiler)
+    implementation (libs.recyclerview)
 
-    implementation ("org.bouncycastle:bcprov-jdk15on:1.70")
+    implementation (libs.bcprov.jdk15on)
 }
