@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 public class KeyRotationManager {
     private static final String TAG = "KeyRotationManager";
-    public static final double ROTATION_INTERVAL = 14 * 24 * 60 * 60 * 1000L; // 14 days in milliseconds
+    public static final double ROTATION_INTERVAL = 7 * 24 * 60 * 60 * 1000L; // 14 days in milliseconds
     private static final String PREFS_NAME = "KeyRotationPrefs";
     private static final String LAST_ROTATION_TIME = "LastRotationTime";
     private final Context context;

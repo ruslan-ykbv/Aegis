@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -39,6 +40,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
     private PasswordAdapter adapter;
@@ -48,6 +51,10 @@ public class MainActivity extends AppCompatActivity {
     private BiometricPrompt.PromptInfo showPromptInfo;
     private BiometricPrompt.PromptInfo editPromptInfo;
     private PasswordEntry passwordEntryToShow;
+    private ProgressBar progressBar;
+    private TextView progressText;
+    private View progressOverlay;
+    private ExecutorService backgroundExecutor;
 
     private final ActivityResultLauncher<Intent> addPasswordLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -87,6 +94,8 @@ public class MainActivity extends AppCompatActivity {
         setupRecyclerView();
         setupViewModel();
         setupBiometricAuthentication();
+
+        backgroundExecutor = Executors.newSingleThreadExecutor();
     }
 
     private void initializeComponents() {
@@ -97,6 +106,12 @@ public class MainActivity extends AppCompatActivity {
 
         ImageView buttonRestore = findViewById(R.id.button_restore);
         buttonRestore.setOnClickListener(v -> performRestore());
+
+        progressBar = findViewById(R.id.progress_bar);
+        progressText = findViewById(R.id.progress_text);
+        progressOverlay = findViewById(R.id.progress_overlay);
+        progressOverlay.setOnTouchListener((v, event) -> true);
+
 
         SearchView searchView = findViewById(R.id.search_view);
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -214,48 +229,144 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void performBackup(String passphrase) {
-        List<PasswordEntry> passwordEntries;
-        try {
-            passwordEntries = passwordViewModel.getAllPasswordsSync();
-        } catch (Exception e) {
-            Log.e("Error occurred", "in backup");
-            Toast.makeText(MainActivity.this, "Error fetching passwords", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        showProgress("Encrypting your backup");
 
-        StringBuilder encryptedDataBuilder = new StringBuilder();
-        try {
-            for (PasswordEntry entry : passwordEntries) {
-                String entryData = entry.getWebsite() + "," + entry.getUsername() + "," + EncryptionUtil.decrypt(entry.getEncryptedPassword());
-                String encryptedData = EncryptionUtil.encryptWithPassphrase(entryData, passphrase);
-                encryptedDataBuilder.append(encryptedData).append("\n");
-            }
-        } catch (Exception e) {
-            Log.e("Error occurred", "in backup");
-            Toast.makeText(MainActivity.this, "Backup failed", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        String encryptedData = encryptedDataBuilder.toString();
-
-        ContentValues values = new ContentValues();
-        values.put(MediaStore.Files.FileColumns.DISPLAY_NAME, "password_backup.txt");
-        values.put(MediaStore.Files.FileColumns.MIME_TYPE, "text/plain");
-        values.put(MediaStore.Files.FileColumns.RELATIVE_PATH, Environment.DIRECTORY_DOCUMENTS + "/PasswordManagerBackups/");
-
-        Uri contentUri = getContentResolver().insert(MediaStore.Files.getContentUri("external"), values);
-
-        if (contentUri != null) {
-            try (OutputStream outputStream = getContentResolver().openOutputStream(contentUri)) {
-                assert outputStream != null;
-                outputStream.write(encryptedData.getBytes());
-                outputStream.flush();
-                Toast.makeText(MainActivity.this, "Backup successful", Toast.LENGTH_SHORT).show();
+        backgroundExecutor.execute(() -> {
+            List<PasswordEntry> passwordEntries;
+            try {
+                passwordEntries = passwordViewModel.getAllPasswordsSync();
             } catch (Exception e) {
                 Log.e("Error occurred", "in backup");
-                Toast.makeText(MainActivity.this, "Backup failed", Toast.LENGTH_SHORT).show();
+                runOnUiThread(() -> {
+                    hideProgress();
+                    Toast.makeText(MainActivity.this, "Error fetching passwords", Toast.LENGTH_SHORT).show();
+                });
+                return;
             }
-        } else {
-            Toast.makeText(MainActivity.this, "Failed to create backup file", Toast.LENGTH_SHORT).show();
+
+            StringBuilder encryptedDataBuilder = new StringBuilder();
+            try {
+                for (PasswordEntry entry : passwordEntries) {
+                    String entryData = entry.getWebsite() + "," + entry.getUsername() + "," + EncryptionUtil.decrypt(entry.getEncryptedPassword());
+                    String encryptedData = EncryptionUtil.encryptWithPassphrase(entryData, passphrase);
+                    encryptedDataBuilder.append(encryptedData).append("\n");
+                }
+            } catch (Exception e) {
+                Log.e("Error occurred", "in backup");
+                runOnUiThread(() -> {
+                    hideProgress();
+                    Toast.makeText(MainActivity.this, "Backup failed", Toast.LENGTH_SHORT).show();
+                });
+                return;
+            }
+            String encryptedData = encryptedDataBuilder.toString();
+
+            ContentValues values = new ContentValues();
+            values.put(MediaStore.Files.FileColumns.DISPLAY_NAME, "password_backup.txt");
+            values.put(MediaStore.Files.FileColumns.MIME_TYPE, "text/plain");
+            values.put(MediaStore.Files.FileColumns.RELATIVE_PATH, Environment.DIRECTORY_DOCUMENTS + "/PasswordManagerBackups/");
+
+            Uri contentUri = getContentResolver().insert(MediaStore.Files.getContentUri("external"), values);
+
+            if (contentUri != null) {
+                try (OutputStream outputStream = getContentResolver().openOutputStream(contentUri)) {
+                    assert outputStream != null;
+                    outputStream.write(encryptedData.getBytes());
+                    outputStream.flush();
+                    runOnUiThread(() -> {
+                        hideProgress();
+                        Toast.makeText(MainActivity.this, "Backup successful", Toast.LENGTH_SHORT).show();
+                    });
+                } catch (Exception e) {
+                    Log.e("Error occurred", "in backup");
+                    runOnUiThread(() -> {
+                        hideProgress();
+                        Toast.makeText(MainActivity.this, "Backup failed", Toast.LENGTH_SHORT).show();
+                    });
+                }
+            } else {
+                runOnUiThread(() -> {
+                    hideProgress();
+                    Toast.makeText(MainActivity.this, "Failed to create backup file", Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
+
+    private void restoreFromBackup(Uri uri, String passphrase) {
+        showProgress("Decrypting your backup");
+
+        backgroundExecutor.execute(() -> {
+            try (InputStream inputStream = getContentResolver().openInputStream(uri);
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+
+                String line;
+                int lineNumber = 0;
+                while ((line = reader.readLine()) != null) {
+                    lineNumber++;
+                    if (line.trim().isEmpty()) {
+                        continue;
+                    }
+
+                    try {
+                        String decryptedEntry = EncryptionUtil.decryptWithPassphrase(line, passphrase);
+                        String[] parts = decryptedEntry.split(",");
+                        if (parts.length == 3) {
+                            String website = parts[0];
+                            String username = parts[1];
+                            String decryptedPassword = parts[2];
+
+                            String encryptedPassword = EncryptionUtil.encrypt(decryptedPassword);
+                            PasswordEntry newEntry = new PasswordEntry(website, username, encryptedPassword);
+                            passwordViewModel.insert(newEntry);
+                        } else {
+                            Log.e("Restore", "Parsing error: Invalid format.");
+                        }
+                    } catch (Exception e) {
+                        Log.e("Error occurred", "in restore");
+                    }
+                }
+
+                runOnUiThread(() -> {
+                    hideProgress();
+                    Toast.makeText(this, "Restore complete", Toast.LENGTH_SHORT).show();
+                });
+            } catch (Exception e) {
+                Log.e("Error occurred", "in restore");
+                runOnUiThread(() -> {
+                    hideProgress();
+                    Toast.makeText(this, "Error reading or decrypting backup", Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
+
+    private void showProgress(String message) {
+        runOnUiThread(() -> {
+            progressOverlay.setVisibility(View.VISIBLE);
+            progressBar.setVisibility(View.VISIBLE);
+            progressText.setVisibility(View.VISIBLE);
+            progressText.setText(message);
+            progressOverlay.setClickable(true);
+            progressOverlay.setFocusable(true);
+        });
+    }
+
+    private void hideProgress() {
+        runOnUiThread(() -> {
+            progressOverlay.setVisibility(View.GONE);
+            progressBar.setVisibility(View.GONE);
+            progressText.setVisibility(View.GONE);
+            progressOverlay.setClickable(false);
+            progressOverlay.setFocusable(false);
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (backgroundExecutor != null) {
+            backgroundExecutor.shutdown();
         }
     }
 
@@ -294,43 +405,6 @@ public class MainActivity extends AppCompatActivity {
         builder.show();
     }
 
-    private void restoreFromBackup(Uri uri, String passphrase) {
-        try (InputStream inputStream = getContentResolver().openInputStream(uri);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-
-            String line;
-            int lineNumber = 0;
-            while ((line = reader.readLine()) != null) {
-                lineNumber++;
-                if (line.trim().isEmpty()) {
-                    continue;
-                }
-
-                try {
-                    String decryptedEntry = EncryptionUtil.decryptWithPassphrase(line, passphrase);
-                    String[] parts = decryptedEntry.split(",");
-                    if (parts.length == 3) {
-                        String website = parts[0];
-                        String username = parts[1];
-                        String decryptedPassword = parts[2];
-
-                        String encryptedPassword = EncryptionUtil.encrypt(decryptedPassword);
-                        PasswordEntry newEntry = new PasswordEntry(website, username, encryptedPassword);
-                        passwordViewModel.insert(newEntry);
-                    } else {
-                        Log.e("Restore", "Parsing error: Invalid format.");
-                    }
-                } catch (Exception e) {
-                    Log.e("Error occurred", "in restore");
-                }
-            }
-
-            Toast.makeText(this, "Restore complete", Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-            Log.e("Error occurred", "in restore");
-            Toast.makeText(this, "Error reading or decrypting backup", Toast.LENGTH_SHORT).show();
-        }
-    }
 
     private void showPassword() {
         if (passwordEntryToShow != null) {
