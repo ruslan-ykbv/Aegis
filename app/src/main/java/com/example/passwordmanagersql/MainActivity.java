@@ -83,6 +83,7 @@ public class MainActivity extends AppCompatActivity {
                     Uri uri = result.getData().getData();
                     handleRestoreFile(uri);
                 }
+
             });
 
     @Override
@@ -177,13 +178,6 @@ public class MainActivity extends AppCompatActivity {
                 .setSubtitle("Use your biometric credential")
                 .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK | BiometricManager.Authenticators.DEVICE_CREDENTIAL)
                 .build();
-    }
-
-    private void performRestore() {
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("text/plain");
-        restoreFileLauncher.launch(intent);
     }
 
     private void startBackupProcess() {
@@ -293,6 +287,13 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void performRestore() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("text/plain");
+        restoreFileLauncher.launch(intent);
+    }
+
     private void restoreFromBackup(Uri uri, String passphrase) {
         showProgress("Decrypting your backup");
 
@@ -301,9 +302,7 @@ public class MainActivity extends AppCompatActivity {
                  BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
 
                 String line;
-                int lineNumber = 0;
                 while ((line = reader.readLine()) != null) {
-                    lineNumber++;
                     if (line.trim().isEmpty()) {
                         continue;
                     }
